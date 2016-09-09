@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#FF4081</color>
+
+
+    <!-- <color name="app_color">#5fb0c9</color>-->
+    <color name="app_color">#FFF</color>
+    <color name="white">#ffffff</color>
+
+    <!--Indigo 500-->
+    <color name="primary_500">#3F51B5</color>
+    <!--Indigo 700-->
+    <color name="primary_700">#303F9F</color>
+    <!--Pink 500-->
+    <color name="accent_500">#E91E63</color>
+    <color name="btn_color">#D6672E</color>
+    <!--Pink 700-->
+    <color name="accent_700">#C2185B</color>
+    <color name="black_trans80">#14000000</color>
+
+    <color name="indicator_unselected">#4D000000</color>
+
+
+    <color name="blue_grey">#455A64</color>
+    <color name="red">#F44336</color>
+    <color name="pink">#E91E63</color>
+    <color name="purple">#9C27B0</color>
+    <color name="deep_purple">#673AB7</color>
+    <color name="indigo">#3F51B5</color>
+    <color name="blue">#2196F3</color>
+    <color name="light_blue">#03A9F4</color>
+    <color name="cyan">#00BCD4</color>
+    <color name="teal">#009688</color>
+    <color name="teal2">#d67601</color>
+    <color name="green">#4CAF50</color>
+    <color name="light_green">#8BC34A</color>
+    <color name="lime">#CDDC39</color>
+    <color name="yellow">#FFEB3B</color>
+    <color name="amber">#FFC107</color>
+    <color name="orange">#FF9800</color>
+    <color name="deep_orange">#FF5722</color>
+
+    <color name="button_color">#4BC2FF</color>
+
+    <color name="teal_050">#e0f2f1</color> <!-- Use with black text -->
+    <color name="teal_100">#b2dfdb</color> <!-- Use with black text -->
+    <color name="teal_200">#80cbc4</color> <!-- Use with black text -->
+    <color name="teal_300">#4db6ac</color> <!-- Use with black text -->
+    <color name="teal_400">#26a69a</color> <!-- Use with black text -->
+    <color name="teal_500">#009688</color> <!-- Use with white text -->
+    <color name="teal_600">#00897b</color> <!-- Use with white text -->
+    <color name="teal_700">#00796b</color> <!-- Use with white text -->
+    <color name="teal_800">#00695c</color> <!-- Use with white text -->
+    <color name="teal_900">#004d40</color> <!-- Use with white text -->
+    <color name="teal_a100">#a7ffeb</color> <!-- Use with black text -->
+    <color name="teal_a200">#64ffda</color> <!-- Use with black text -->
+    <color name="teal_a400">#1de9b6</color> <!-- Use with black text -->
+    <color name="teal_a700">#00bfa5</color> <!-- Use with black text -->
+</resources>

@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/coordinatorLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.app.tracker.SelectSite">
+
+    <android.support.design.widget.CoordinatorLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:id="@+id/snackbarlocation">
+    </android.support.design.widget.CoordinatorLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+
+
+        <RelativeLayout
+            android:background="@drawable/header"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <ImageView
+                android:layout_marginTop="50dp"
+                android:id="@+id/img"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:layout_alignParentTop="true"
+                android:layout_centerHorizontal="true"
+                android:contentDescription="@string/app_name"
+                android:scaleType="fitXY"
+                android:src="@drawable/location_icon" />
+
+            <com.app.widget.MyFontTextView
+                android:id="@+id/title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/img"
+                android:layout_centerInParent="true"
+                android:padding="@dimen/margin_5"
+                android:text="@string/app_name"
+                android:textColor="@android:color/white"
+                android:textSize="@dimen/text_size_large"
+                android:textStyle="bold" />
+
+            <ImageView
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:id="@+id/logout_img"
+                android:layout_below="@+id/img"
+                android:src="@drawable/logout"
+                android:onClick="appLogout"
+                android:layout_alignParentRight="true"
+                android:layout_toRightOf="@+id/title"
+                android:scaleType="fitCenter"/>
+
+
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:background="@android:color/black"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_margin="@dimen/text_size_large"
+                android:orientation="vertical">
+
+                <ProgressBar
+                    android:layout_gravity="center_horizontal"
+                    android:layout_width="35dp"
+                    android:layout_height="35dp"
+                    android:visibility="gone"
+                    android:id="@+id/loader"/>
+
+            <Button
+                android:id="@+id/select_site_btn"
+                android:layout_marginTop="30dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="@dimen/margin_10"
+                android:onClick="mySelectSite"
+                android:theme="@style/MyButton"
+                android:drawableRight="@android:drawable/arrow_down_float"
+                android:text="@string/lbl_select_site"
+                android:textColor="#FFF" />
+
+                <Spinner
+                    android:id="@+id/spinner_site"
+                    android:layout_width="match_parent"
+                    android:layout_marginLeft="5dp"
+                    android:layout_height="0dp">
+                </Spinner>
+
+                <EditText
+                    android:id="@+id/comment_edt"
+                    android:layout_width="match_parent"
+                    android:layout_height="120dp"
+                    android:maxLines="10"
+                    android:padding="@dimen/margin_10"
+                    android:layout_gravity="left"
+                    android:layout_marginLeft="4dp"
+                    android:layout_marginRight="4dp"
+                    android:gravity="left"
+                    android:hint="@string/inc"
+                    android:singleLine="false"
+                    android:inputType="textMultiLine"
+                    android:background="@android:color/white"
+                    />
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+
+
+                    <Button
+                        android:id="@+id/start_btn"
+                        android:layout_marginTop="30dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/round_btn"
+                        android:padding="@dimen/margin_10"
+                        android:onClick="myStartServiceButton"
+                        android:layout_alignParentLeft="true"
+                        android:theme="@style/MyButton"
+                        android:text="@string/lbl_start"
+                        android:textColor="#FFF" />
+                    <Button
+                        android:id="@+id/stop_btn"
+                        android:layout_marginTop="30dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/round_btn"
+                        android:padding="@dimen/margin_10"
+                        android:onClick="myStopServiceButton"
+                        android:layout_alignParentRight="true"
+                        android:theme="@style/MyButton"
+                        android:text="@string/lbl_stop"
+                        android:textColor="#FFF" />
+
+
+                </RelativeLayout>
+
+
+            </LinearLayout>
+
+
+        </RelativeLayout>
+
+
+    </LinearLayout>
+
+</RelativeLayout>
+    </android.support.design.widget.CoordinatorLayout>
