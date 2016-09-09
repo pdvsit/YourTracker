@@ -120,19 +120,19 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
 
         if(serviceStatus != null && serviceStatus.equalsIgnoreCase("Yes")) {
             startRepeatingTask();
-            /*start_btn.setEnabled(false);
+            start_btn.setEnabled(false);
             start_btn.getBackground().setAlpha(100);
 
             stop_btn.setEnabled(true);
-            stop_btn.getBackground().setAlpha(200);*/
+            stop_btn.getBackground().setAlpha(200);
 
         } else {
             stopRepeatingTask();
-            /*start_btn.setEnabled(true);
+            start_btn.setEnabled(true);
             start_btn.getBackground().setAlpha(200);
 
             stop_btn.setEnabled(false);
-            stop_btn.getBackground().setAlpha(100);*/
+            stop_btn.getBackground().setAlpha(100);
         }
 
 
@@ -233,7 +233,7 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
                 AppLog.Log("Selected: ", sites.getId() +" "+sites.getName());
                 Singleton.getInstance(mContext).selectedSiteId = sites.getId();
                 if(Singleton.getInstance(mContext).getSelectedSiteName == null) {
-                    if (!Validation.isNullOrEmpty(sites.getName()) && (sites.getName().equalsIgnoreCase("SELECT SITE"))) {
+                    if (!Validation.isNullOrEmpty(sites.getName()) && (sites.getName().equalsIgnoreCase(getResources().getString(R.string.lbl_select_site)))) {
                         select_site_btn.setText(getResources().getString(R.string.lbl_select_site));
                     } else {
                         select_site_btn.setText(sites.getName());
@@ -331,7 +331,14 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
         String getIncident = comment_edt.getText().toString();
         String selectedSiteId = yourTrackerUserDetails.get(SessionManager.KEY_SELECTED_SITE_ID);
 
+        String getSelectedSite = select_site_btn.getText().toString();
         String getDate = getDateTime();
+
+        if(getSelectedSite != null && getSelectedSite.equalsIgnoreCase(getResources().getString(R.string.lbl_select_site))) {
+            Singleton.getInstance(mContext).ShowSnackMessage("Please select site", coordinatorLayout, R.color.button_color);
+
+            return;
+        }
 
         if(selectedSiteId == null || Integer.valueOf(selectedSiteId) == 0) {
             selectedSiteId = Singleton.getInstance(mContext).selectedSiteId;
@@ -373,13 +380,6 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
 
         if(trackId == null) {
             trackId = getTrackID;
-        }
-
-        AppLog.Log("Selected_site: ", Singleton.getInstance(mContext).selectedSiteId);
-        if(Validation.isNullOrEmpty(Singleton.getInstance(mContext).selectedSiteId) ||
-                Singleton.getInstance(mContext).selectedSiteId.equalsIgnoreCase("SELECT SITE")) {
-            Singleton.getInstance(mContext).ShowToastMessage("Please select site", mContext);
-            return;
         }
       /*  if(Validation.isNullOrEmpty(getIncident)) {
             Singleton.getInstance(mContext).ShowToastMessage("Please enter incident", mContext);
@@ -461,11 +461,11 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
 
                         Singleton.getInstance(mContext).ShowSnackMessage("Your service has been started", coordinatorLayout, R.color.button_color);
                         startRepeatingTask();
-                       /* start_btn.setEnabled(false);
+                        start_btn.setEnabled(false);
                         start_btn.getBackground().setAlpha(100);
 
                         stop_btn.setEnabled(true);
-                        stop_btn.getBackground().setAlpha(200);*/
+                        stop_btn.getBackground().setAlpha(200);
                     }
                 } catch (JSONException e) {
                     e.printStackTrace();
@@ -485,21 +485,24 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
                     } else {
                         JSONObject resObj = newJsonObj.getJSONObject(JsonParseKey.RESPONSE);
                         String trackId = resObj.getString(JsonParseKey.ID);
-                        String getInc = comment_edt.getText().toString();
-                        String getSelectedSite = select_site_btn.getText().toString();
-
+                        //String getInc = comment_edt.getText().toString();
+                        //String getSelectedSite = select_site_btn.getText().toString();
+                        comment_edt.setText("");
+                        select_site_btn.setText(getResources().getString(R.string.lbl_select_site));
+                        Singleton.getInstance(mContext).selectedSiteId = null;
+                        Singleton.getInstance(mContext).getSelectedSiteName = null;
                         sessionManager.createLoginSession(yourTrackerUserDetails.get(SessionManager.KEY_ROLE),
                                 yourTrackerUserDetails.get(SessionManager.KEY_TOKEN), yourTrackerUserDetails.get(SessionManager.KEY_STATUS),
-                                yourTrackerUserDetails.get(SessionManager.KEY_TIME_FRAME), trackId, "No", getInc,
-                                getSelectedSite, Singleton.getInstance(mContext).selectedSiteId);
+                                yourTrackerUserDetails.get(SessionManager.KEY_TIME_FRAME), trackId, "No", null,
+                                null, null);
                         Singleton.getInstance(mContext).ShowSnackMessage("Your service has been stoped", coordinatorLayout, R.color.button_color);
                         stopRepeatingTask();
 
-                       /* start_btn.setEnabled(true);
+                        start_btn.setEnabled(true);
                         start_btn.getBackground().setAlpha(200);
 
                         stop_btn.setEnabled(false);
-                        stop_btn.getBackground().setAlpha(100);*/
+                        stop_btn.getBackground().setAlpha(100);
                     }
                 } catch (JSONException e) {
                     e.printStackTrace();
