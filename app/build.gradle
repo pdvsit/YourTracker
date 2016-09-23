@@ -6,7 +6,7 @@ android {
 
     defaultConfig {
         applicationId "com.app.tracker"
-        minSdkVersion 15
+        minSdkVersion 10
         targetSdkVersion 24
         versionCode 1
         versionName "1.0"
@@ -14,11 +14,11 @@ android {
     }
 
     dexOptions {
-        javaMaxHeapSize "4g"
+        javaMaxHeapSize "2g"
     }
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }

@@ -69,7 +69,9 @@
                 android:layout_height="wrap_content"
                 android:background="#00000000"
                 android:drawableLeft="@android:drawable/ic_lock_idle_lock"
-                android:hint="wilson"
+                android:hint="Username"
+                android:singleLine="true"
+                android:maxLength="20"
                 android:drawablePadding="@dimen/margin_2"
                 android:textColor="@android:color/white"
                 android:textColorHint="@android:color/white" />

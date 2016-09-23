@@ -7,11 +7,14 @@ import android.provider.Settings;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import com.app.interfaces.WebServiceInterface;
 import com.app.servicehandler.HttpService;
@@ -52,6 +55,31 @@ public class Login extends AppCompatActivity implements WebServiceInterface {
         edt_login = (EditText) this.findViewById(R.id.edt_login);
         coordinatorLayout = (CoordinatorLayout) this.findViewById(R.id.coordinatorLayout);
         loader = (ProgressBar) this.findViewById(R.id.loader);
+
+
+        edt_login.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if ((event != null && (event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) || (actionId == EditorInfo.IME_ACTION_DONE)) {
+                    AppLog.Log("TAG: ","Enter pressed");
+
+                    String getUserInput = edt_login.getText().toString();
+                    if(Validation.isNullOrEmpty(getUserInput)) {
+                        Singleton.getInstance(mContext).ShowSnackMessage(getResources().getString(R.string.error_email), coordinatorLayout,
+                                R.color.button_color);
+                    } else if (!Connectivity.isConnected(mContext)) {
+                        Singleton.getInstance(mContext).ShowSnackMessage(getResources().getString(R.string.lbl_error_network), coordinatorLayout, R.color.button_color);
+                    } else {
+                        loader.setVisibility(View.VISIBLE);
+                        String deviceId = Settings.Secure.getString(getApplication().getContentResolver(),
+                                Settings.Secure.ANDROID_ID);
+
+                        String compUrl = ApiUrl.LOGIN + "/" + getUserInput + "/" + Constants.PASSWORD + "/" + deviceId + "/" + deviceId;
+                        launchLoginTask(compUrl, ServiceCode.LOGIN);
+                    }
+                }
+                return false;
+            }
+        });
 
     }
 
