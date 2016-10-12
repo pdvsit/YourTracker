@@ -47,6 +47,8 @@ import com.app.utility.Singleton;
 import com.app.utility.Validation;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 
 import org.json.JSONArray;
@@ -78,12 +80,15 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
 
     private Button start_btn, stop_btn;
 
-    private double lat = 0, lon = 0;
-    private int getTimeFrame ;
+    private int getTimeFrame;
     private String _getTimeFrame = null;
 
     private static final int PERMISSION_ACCESS_COARSE_LOCATION = 1;
     private GoogleApiClient googleApiClient;
+    private LocationRequest mLocationRequest;
+    private long UPDATE_INTERVAL = 10 * 1000;  /* 10 secs */
+    private long FASTEST_INTERVAL = 2000; /* 2 sec */
+
     Handler mHandler = new Handler();
 
     private String getTrackID = null;
@@ -99,7 +104,7 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
 
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[] { android.Manifest.permission.ACCESS_COARSE_LOCATION },
+            ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.ACCESS_COARSE_LOCATION},
                     PERMISSION_ACCESS_COARSE_LOCATION);
         }
 
@@ -110,15 +115,15 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
 
         String serviceStatus = yourTrackerUserDetails.get(SessionManager.KEY_SERVICE_STATUS);
 
-        if(!Validation.isNullOrEmpty(getSelectedIncident)) {
+        if (!Validation.isNullOrEmpty(getSelectedIncident)) {
             comment_edt.setText(getSelectedIncident);
         } else {
             comment_edt.setText("");
         }
 
-        AppLog.Log("serviceStatus: ", serviceStatus +"");
+        AppLog.Log("serviceStatus: ", serviceStatus + "");
 
-        if(serviceStatus != null && serviceStatus.equalsIgnoreCase("Yes")) {
+        if (serviceStatus != null && serviceStatus.equalsIgnoreCase("Yes")) {
             startRepeatingTask();
             start_btn.setEnabled(false);
             start_btn.getBackground().setAlpha(100);
@@ -136,59 +141,55 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
         }
 
 
-
     }
 
 
-
-    Runnable mHandlerTask = new Runnable()
-    {
+    Runnable mHandlerTask = new Runnable() {
         @Override
         public void run() {
 
-            AppLog.Log("getTimeFrame: ", "Min: "+_getTimeFrame+ "TimeMil: "+getTimeFrame +"");
+            AppLog.Log("getTimeFrame: ", "Min: " + _getTimeFrame + "TimeMil: " + getTimeFrame + "");
             mHandler.postDelayed(mHandlerTask, getTimeFrame);
             String getToken = yourTrackerUserDetails.get(SessionManager.KEY_TOKEN);
-            String trackId =  yourTrackerUserDetails.get(SessionManager.KEY_TRACK_ID);
-            if(getTrackID == null) {
+            String trackId = yourTrackerUserDetails.get(SessionManager.KEY_TRACK_ID);
+            if (getTrackID == null) {
                 getTrackID = trackId;
             }
             String getDate = getDateTime();
 
-            if(Validation.isNullOrEmpty(getToken)) {
+            if (Validation.isNullOrEmpty(getToken)) {
                 sessionManager.logoutUser();
                 Singleton.getInstance(mContext).ShowSnackMessage("Session expired, please login again", coordinatorLayout, R.color.button_color);
                 return;
             }
 
-            if(Validation.isNullOrEmpty(getTrackID)) {
+            if (Validation.isNullOrEmpty(getTrackID)) {
 
                 Singleton.getInstance(mContext).ShowSnackMessage("Please try again", coordinatorLayout, R.color.button_color);
                 return;
             }
 
-            if(lat == 0 || lon == 0) {
+            if (Singleton.getInstance(mContext).latitude == 0 || Singleton.getInstance(mContext).longitude == 0) {
                 //Singleton.getInstance(mContext).ShowToastMessage("Please enable location from device ", mContext);
                 showSettingsAlert();
                 return;
             }
 
-            String compUrl = ApiUrl.SEND_LOCATION +"/"+ getToken +"/"+ getTrackID +"/"+ getDate +"/"+ lat +"/"+ lon;
+            String compUrl = ApiUrl.SEND_LOCATION + "/" + getToken + "/" + getTrackID + "/" + getDate + "/" +
+                    Singleton.getInstance(mContext).latitude + "/" + Singleton.getInstance(mContext).longitude;
             launchSendPeriodicallyTask(compUrl, ServiceCode.SEND_LOCATION);
 
         }
     };
 
-    void startRepeatingTask()
-    {
-        if(mHandlerTask != null) {
+    void startRepeatingTask() {
+        if (mHandlerTask != null) {
             mHandlerTask.run();
         }
     }
 
-    void stopRepeatingTask()
-    {
-        if(mHandlerTask != null) {
+    void stopRepeatingTask() {
+        if (mHandlerTask != null) {
             mHandler.removeCallbacks(mHandlerTask);
         }
     }
@@ -202,12 +203,11 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
         getSelectedIncident = yourTrackerUserDetails.get(SessionManager.KEY_INCIDENT);
         Singleton.getInstance(mContext).getSelectedSiteName = yourTrackerUserDetails.get(SessionManager.KEY_SELECTED_SITE_NAME);
         Singleton.getInstance(mContext).selectedSiteId = yourTrackerUserDetails.get(SessionManager.KEY_SELECTED_SITE_ID);
-        if(!Validation.isNullOrEmpty(_getTimeFrame)) {
+        if (!Validation.isNullOrEmpty(_getTimeFrame)) {
             getTimeFrame = Integer.valueOf(_getTimeFrame); //1000 * 60 * 2;
             getTimeFrame = 1000 * 60 * getTimeFrame;
-            AppLog.Log("getTimeFrame: ", "Min: "+_getTimeFrame+ "TimeMil: "+getTimeFrame +"");
+            AppLog.Log("getTimeFrame: ", "Min: " + _getTimeFrame + "TimeMil: " + getTimeFrame + "");
         }
-
 
 
         comment_edt = (EditText) this.findViewById(R.id.comment_edt);
@@ -230,9 +230,9 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
                 // Here you get the current item (a User object) that is selected by its position
                 SiteModel sites = spinnerAdaptor.getItem(position);
 
-                AppLog.Log("Selected: ", sites.getId() +" "+sites.getName());
+                AppLog.Log("Selected: ", sites.getId() + " " + sites.getName());
                 Singleton.getInstance(mContext).selectedSiteId = sites.getId();
-                if(Singleton.getInstance(mContext).getSelectedSiteName == null) {
+                if (Singleton.getInstance(mContext).getSelectedSiteName == null) {
                     if (!Validation.isNullOrEmpty(sites.getName()) && (sites.getName().equalsIgnoreCase(getResources().getString(R.string.lbl_select_site)))) {
                         select_site_btn.setText(getResources().getString(R.string.lbl_select_site));
                     } else {
@@ -245,6 +245,7 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
                 }
                 Singleton.getInstance(mContext).getSelectedSiteName = null;
             }
+
             @Override
             public void onNothingSelected(AdapterView<?> adapter) {
                 AppLog.Log("Nothing: ", "Selected");
@@ -291,8 +292,7 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
         alertDialog.setPositiveButton(R.string.settings, new DialogInterface.OnClickListener() {
 
             @Override
-            public void onClick(DialogInterface dialog, int which)
-            {
+            public void onClick(DialogInterface dialog, int which) {
                 Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
                 startActivity(intent);
             }
@@ -302,10 +302,9 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
         alertDialog.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
 
             @Override
-            public void onClick(DialogInterface dialog, int which)
-            {
+            public void onClick(DialogInterface dialog, int which) {
                 dialog.cancel();
-                if(mContext != null) {
+                if (mContext != null) {
 
                 }
             }
@@ -334,36 +333,36 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
         String getSelectedSite = select_site_btn.getText().toString();
         String getDate = getDateTime();
 
-        if(getSelectedSite != null && getSelectedSite.equalsIgnoreCase(getResources().getString(R.string.lbl_select_site))) {
+        if (getSelectedSite != null && getSelectedSite.equalsIgnoreCase(getResources().getString(R.string.lbl_select_site))) {
             Singleton.getInstance(mContext).ShowSnackMessage("Please select site", coordinatorLayout, R.color.button_color);
 
             return;
         }
 
-        if(selectedSiteId == null || Integer.valueOf(selectedSiteId) == 0) {
+        if (selectedSiteId == null || Integer.valueOf(selectedSiteId) == 0) {
             selectedSiteId = Singleton.getInstance(mContext).selectedSiteId;
         }
 
         AppLog.Log("Selected_site: ", selectedSiteId);
-        if(Validation.isNullOrEmpty(selectedSiteId) ||
+        if (Validation.isNullOrEmpty(selectedSiteId) ||
                 selectedSiteId.equalsIgnoreCase("0")) {
             Singleton.getInstance(mContext).ShowSnackMessage("Please select site", coordinatorLayout, R.color.button_color);
             return;
         }
-        if(Validation.isNullOrEmpty(getIncident)) {
+        if (Validation.isNullOrEmpty(getIncident)) {
             Singleton.getInstance(mContext).ShowSnackMessage("Please enter incident", coordinatorLayout, R.color.button_color);
             return;
         }
 
-        if(lat == 0 || lon == 0) {
+        if (Singleton.getInstance(mContext).latitude == 0 || Singleton.getInstance(mContext).longitude == 0) {
             //Singleton.getInstance(mContext).ShowToastMessage("Please enable location from device ", mContext);
             showSettingsAlert();
             return;
         }
-        String compUrl = ApiUrl.START_SERVICE +"/"+ getToken +"/"+ Constants.START_SWITCH +"/"+
-                getDate.replaceAll(" ", "%20") +"/"+
-                selectedSiteId +"/"+
-                getIncident.replaceAll(" ", "%20") +"/"+ lat +"/" + lon;
+        String compUrl = ApiUrl.START_SERVICE + "/" + getToken + "/" + Constants.START_SWITCH + "/" +
+                getDate.replaceAll(" ", "%20") + "/" +
+                selectedSiteId + "/" +
+                getIncident.replaceAll(" ", "%20") + "/" + Singleton.getInstance(mContext).latitude + "/" + Singleton.getInstance(mContext).longitude;
         launchStartStopTask(compUrl, ServiceCode.START_BUTTON);
     }
 
@@ -378,7 +377,7 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
         //String getIncident = comment_edt.getText().toString();
         String getDate = getDateTime();
 
-        if(trackId == null) {
+        if (trackId == null) {
             trackId = getTrackID;
         }
       /*  if(Validation.isNullOrEmpty(getIncident)) {
@@ -386,21 +385,21 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
             return;
         }*/
 
-        if(lat == 0 || lon == 0) {
+        if (Singleton.getInstance(mContext).latitude == 0 || Singleton.getInstance(mContext).longitude == 0) {
             //Singleton.getInstance(mContext).ShowToastMessage("Please enable location from device ", mContext);
             showSettingsAlert();
             return;
         }
-        String compUrl = ApiUrl.STOP_SERVICE +"/"+ getToken +"/"+
-                trackId +"/"+
+        String compUrl = ApiUrl.STOP_SERVICE + "/" + getToken + "/" +
+                trackId + "/" +
                 getDate.replaceAll(" ", "%20") +
-                "/"+ lat +"/" + lon;
+                "/" + Singleton.getInstance(mContext).latitude + "/" + Singleton.getInstance(mContext).longitude;
         launchStartStopTask(compUrl, ServiceCode.STOP_BUTTON);
     }
 
     public void appLogout(View view) {
         String getToken = yourTrackerUserDetails.get(SessionManager.KEY_TOKEN);
-        String compUrl = ApiUrl.LOGOUT +"/"+  getToken;
+        String compUrl = ApiUrl.LOGOUT + "/" + getToken;
         launchLogoutTask(compUrl, ServiceCode.LOGOUT);
     }
 
@@ -446,7 +445,7 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
                     String getMessage = newJsonObj.getString(JsonParseKey.MESSAGE);
 
                     int status = newJsonObj.getInt(JsonParseKey.STATUS);
-                    if(status == 0) {
+                    if (status == 0) {
                         Singleton.getInstance(mContext).ShowSnackMessage(getMessage, coordinatorLayout, R.color.button_color);
                     } else {
                         JSONObject resObj = newJsonObj.getJSONObject(JsonParseKey.RESPONSE);
@@ -471,8 +470,7 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
                     e.printStackTrace();
                 }
 
-            }
-            else if (serviceCode == ServiceCode.STOP_BUTTON) {
+            } else if (serviceCode == ServiceCode.STOP_BUTTON) {
                 AppLog.Log("STOP_BUTTON", getResponse);
 
                 try {
@@ -480,7 +478,7 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
                     JSONObject newJsonObj = jsonObject.getJSONObject(JsonParseKey.TRACK_STOP_RESULT);
                     String getMessage = newJsonObj.getString(JsonParseKey.MESSAGE);
                     int status = newJsonObj.getInt(JsonParseKey.STATUS);
-                    if(status == 0) {
+                    if (status == 0) {
                         Singleton.getInstance(mContext).ShowSnackMessage(getMessage, coordinatorLayout, R.color.button_color);
                     } else {
                         JSONObject resObj = newJsonObj.getJSONObject(JsonParseKey.RESPONSE);
@@ -508,14 +506,13 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
                     e.printStackTrace();
                 }
 
-            }
-            else if (serviceCode == ServiceCode.LOGOUT) {
+            } else if (serviceCode == ServiceCode.LOGOUT) {
                 AppLog.Log("LOGOUT", getResponse);
                 try {
                     JSONObject jsonObject = new JSONObject(getResponse);
                     JSONObject logJsonObj = jsonObject.getJSONObject(JsonParseKey.LOG_OUT_RESULT);
                     String msg = logJsonObj.getString(JsonParseKey.MESSAGE);
-                    if(msg != null && msg.equalsIgnoreCase("Successful")) {
+                    if (msg != null && msg.equalsIgnoreCase("Successful")) {
                         Singleton.getInstance(mContext).ShowSnackMessage("Successfully logout", coordinatorLayout, R.color.button_color);
                         sessionManager.logoutUser();
                     } else {
@@ -525,7 +522,7 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
-            }  else if (serviceCode == ServiceCode.SEND_LOCATION) {
+            } else if (serviceCode == ServiceCode.SEND_LOCATION) {
                 AppLog.Log("SEND_LOCATION", getResponse);
             } else {
                 AppLog.Log("Else", getResponse);
@@ -534,7 +531,7 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
     }
 
 
-    @Override
+ /*   @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
 
         View view = getCurrentFocus();
@@ -547,7 +544,7 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
                 ((InputMethodManager) this.getSystemService(Context.INPUT_METHOD_SERVICE)).hideSoftInputFromWindow((this.getWindow().getDecorView().getApplicationWindowToken()), 0);
         }
         return super.dispatchTouchEvent(ev);
-    }
+    }*/
 
 
     /*
@@ -563,7 +560,7 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
     private void launchStartStopTask(String url, int ServiceTypeCode) {
         if (!Connectivity.isConnected(mContext)) {
             Singleton.getInstance(mContext).ShowSnackMessage(getResources().getString(R.string.lbl_error_network), coordinatorLayout
-            ,R.color.button_color);
+                    , R.color.button_color);
             return;
         }
         AppLog.Log("url>>", url);
@@ -592,8 +589,6 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
     }
 
 
-
-
     @Override
     public void onConnected(@Nullable Bundle bundle) {
         AppLog.Log(SelectSite.class.getSimpleName(), "Connected to Google Play Services!");
@@ -602,12 +597,13 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
                 == PackageManager.PERMISSION_GRANTED) {
             Location lastLocation = LocationServices.FusedLocationApi.getLastLocation(googleApiClient);
 
-            if(lastLocation != null) {
+            if (lastLocation != null) {
 
-                lat = lastLocation.getLatitude();
-                lon = lastLocation.getLongitude();
-                AppLog.Log("LATLNG: ", lat +" ," +lon);
+                Singleton.getInstance(mContext).latitude = lastLocation.getLatitude();
+                Singleton.getInstance(mContext).longitude = lastLocation.getLongitude();
+                AppLog.Log("onConnected_LATLNG: ", Singleton.getInstance(mContext).latitude + " ," + Singleton.getInstance(mContext).longitude);
                 //GetNearByEventService(lat, lon);
+               // startLocationUpdates();
             } else {
                 showSettingsAlert();
             }
@@ -620,23 +616,10 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
     protected void onResume() {
         super.onResume();
 
-        AppLog.Log(SelectSite.class.getSimpleName(), "Connected to Google Play Services!");
-
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
-                == PackageManager.PERMISSION_GRANTED) {
-            Location lastLocation = LocationServices.FusedLocationApi.getLastLocation(googleApiClient);
-
-            if(lastLocation != null) {
-
-                lat = lastLocation.getLatitude();
-                lon = lastLocation.getLongitude();
-
-                AppLog.Log("LATLNG: ", lat +" ," +lon);
-                //GetNearByEventService(lat, lon);
-            } else {
-                //showSettingsAlert();
-            }
-
+        if (Singleton.getInstance(mContext).latitude == 0 && Singleton.getInstance(mContext).longitude == 0) {
+            showSettingsAlert();
+        } else {
+            AppLog.Log("onResume_LATLNG: ", Singleton.getInstance(mContext).latitude + " ," + Singleton.getInstance(mContext).longitude);
         }
 
     }
@@ -659,7 +642,7 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
         AppLog.Log(SelectSite.class.getSimpleName(), "Can't connect to Google Play Services!");
     }
 
-    private String getDateTime(){
+    private String getDateTime() {
         Calendar cal = Calendar.getInstance();
         SimpleDateFormat sdf = new SimpleDateFormat("ddMMyyyyHHmm");
         String strDate = sdf.format(cal.getTime());
@@ -673,9 +656,31 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
         } catch (ParseException e) {
             e.printStackTrace();
         }
-        String string=sdf1.format(date);
+        String string = sdf1.format(date);
         System.out.println("Current date in Date Format: " + string);
 
         return string;
     }
+
+
+    /*protected void startLocationUpdates() {
+        // Create the location request
+        mLocationRequest = LocationRequest.create()
+                .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
+                .setInterval(UPDATE_INTERVAL)
+                .setFastestInterval(FASTEST_INTERVAL);
+        // Request location updates
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+        LocationServices.FusedLocationApi.requestLocationUpdates(googleApiClient,
+                mLocationRequest, (LocationListener) this);
+    }*/
 }

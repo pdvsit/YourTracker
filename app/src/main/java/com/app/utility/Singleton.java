@@ -20,6 +20,9 @@ public class Singleton {
     public String selectedSiteId = null;
     public String getSelectedSiteName = null;
 
+    public double latitude = 0;
+    public double longitude = 0;
+
 
     private Singleton(Context context) {
         this.context = context;

@@ -3,6 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/coordinatorLayout"
     android:layout_width="match_parent"
+    android:background="#000"
+    android:focusableInTouchMode="true"
     android:layout_height="match_parent">
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
@@ -17,6 +19,11 @@
         android:layout_centerHorizontal="true"
         android:id="@+id/snackbarlocation">
     </android.support.design.widget.CoordinatorLayout>
+
+    <ScrollView
+        android:layout_above="@+id/footer_rl"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -33,8 +40,8 @@
             <ImageView
                 android:layout_marginTop="50dp"
                 android:id="@+id/img"
-                android:layout_width="60dp"
-                android:layout_height="60dp"
+                android:layout_width="120dp"
+                android:layout_height="180dp"
                 android:layout_alignParentTop="true"
                 android:layout_centerHorizontal="true"
                 android:contentDescription="@string/app_name"
@@ -120,41 +127,6 @@
                     android:background="@android:color/white"
                     />
 
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
-
-
-
-                    <Button
-                        android:id="@+id/start_btn"
-                        android:layout_marginTop="30dp"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:background="@drawable/round_btn"
-                        android:padding="@dimen/margin_10"
-                        android:onClick="myStartServiceButton"
-                        android:layout_alignParentLeft="true"
-                        android:theme="@style/MyButton"
-                        android:text="@string/lbl_start"
-                        android:textColor="#FFF" />
-                    <Button
-                        android:id="@+id/stop_btn"
-                        android:layout_marginTop="30dp"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:background="@drawable/round_btn"
-                        android:padding="@dimen/margin_10"
-                        android:onClick="myStopServiceButton"
-                        android:layout_alignParentRight="true"
-                        android:theme="@style/MyButton"
-                        android:text="@string/lbl_stop"
-                        android:textColor="#FFF" />
-
-
-                </RelativeLayout>
-
-
             </LinearLayout>
 
 
@@ -162,6 +134,46 @@
 
 
     </LinearLayout>
+    </ScrollView>
+
+    <RelativeLayout
+        android:id="@+id/footer_rl"
+        android:layout_marginLeft="@dimen/text_size_large"
+        android:layout_marginRight="@dimen/text_size_large"
+        android:layout_alignParentBottom="true"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+
+
+        <Button
+            android:id="@+id/start_btn"
+            android:layout_marginTop="30dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/round_btn"
+            android:padding="@dimen/margin_10"
+            android:onClick="myStartServiceButton"
+            android:layout_alignParentLeft="true"
+            android:theme="@style/MyButton"
+            android:text="@string/lbl_start"
+            android:textColor="#FFF" />
+        <Button
+            android:id="@+id/stop_btn"
+            android:layout_marginTop="30dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/round_btn"
+            android:padding="@dimen/margin_10"
+            android:onClick="myStopServiceButton"
+            android:layout_alignParentRight="true"
+            android:theme="@style/MyButton"
+            android:text="@string/lbl_stop"
+            android:textColor="#FFF" />
+
+
+    </RelativeLayout>
+
 
 </RelativeLayout>
     </android.support.design.widget.CoordinatorLayout>
