@@ -3,9 +3,11 @@ package com.app.tracker;
 import android.*;
 import android.Manifest;
 import android.annotation.TargetApi;
+import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Build;
@@ -46,10 +48,18 @@ import com.app.utility.SessionManager;
 import com.app.utility.Singleton;
 import com.app.utility.Validation;
 import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.PendingResult;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.LocationSettingsResult;
+import com.google.android.gms.location.LocationSettingsStates;
+import com.google.android.gms.location.LocationSettingsStatusCodes;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -61,9 +71,11 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class SelectSite extends AppCompatActivity implements WebServiceInterface,
-        GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
+        GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
 
     private EditText comment_edt;
     private Button select_site_btn;
@@ -83,11 +95,18 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
     private int getTimeFrame;
     private String _getTimeFrame = null;
 
-    private static final int PERMISSION_ACCESS_COARSE_LOCATION = 1;
     private GoogleApiClient googleApiClient;
+    private final int LOCATION_RESOLVER_CODE = 1000;
+    private final static int PLAY_SERVICES_RESOLUTION_REQUEST = 2000;
+    private Location mLastLocation;
+    private boolean mRequestingLocationUpdates = false;
+
     private LocationRequest mLocationRequest;
-    private long UPDATE_INTERVAL = 10 * 1000;  /* 10 secs */
-    private long FASTEST_INTERVAL = 2000; /* 2 sec */
+
+    // Location updates intervals in sec
+    private static int UPDATE_INTERVAL = 10000; // 10 sec
+    private static int FATEST_INTERVAL = 2000; // 5 sec
+    private static int DISPLACEMENT = 10; // 10 meters
 
     Handler mHandler = new Handler();
 
@@ -95,21 +114,26 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
     //private String getSelectedSiteName = null;
     //private String getSelectedSiteId = null;
     private String getSelectedIncident = null;
+    private boolean isGPSCheckStarted = false;
+    private Handler handler = new Handler();
 
-    @TargetApi(Build.VERSION_CODES.M)
+
+
+    private Timer myTimer = new Timer();
+    private TimerTask doThis;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_select_site);
 
-        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.ACCESS_COARSE_LOCATION},
-                    PERMISSION_ACCESS_COARSE_LOCATION);
+        if (checkPlayServices()) {
+
+            // Building the GoogleApi client
+            buildGoogleApiClient();
+
+            createLocationRequest();
         }
-
-        googleApiClient = new GoogleApiClient.Builder(this, this, this).addApi(LocationServices.API).build();
-
         initWidget();
         loadWebsites();
 
@@ -144,6 +168,187 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
     }
 
 
+    private boolean checkPlayServices() {
+        int resultCode = GooglePlayServicesUtil
+                .isGooglePlayServicesAvailable(this);
+        if (resultCode != ConnectionResult.SUCCESS) {
+            if (GooglePlayServicesUtil.isUserRecoverableError(resultCode)) {
+                GooglePlayServicesUtil.getErrorDialog(resultCode, this,
+                        PLAY_SERVICES_RESOLUTION_REQUEST).show();
+            } else {
+                Toast.makeText(getApplicationContext(),
+                        "This device is not supported.", Toast.LENGTH_LONG)
+                        .show();
+                finish();
+            }
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Creating google api client object
+     * */
+    protected synchronized void buildGoogleApiClient() {
+        googleApiClient = new GoogleApiClient.Builder(this)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(LocationServices.API).build();
+    }
+
+
+    /*
+    Method to display the location on UI
+     */
+    private void displayLocation() {
+
+        if (ActivityCompat.checkSelfPermission(mContext,
+                android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ) {
+            ActivityCompat.requestPermissions((Activity) mContext, new String[]{
+                    android.Manifest.permission.ACCESS_FINE_LOCATION
+            }, 10);
+        }
+
+        if (ActivityCompat.checkSelfPermission(mContext,
+                android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED ) {
+            ActivityCompat.requestPermissions((Activity) mContext, new String[]{
+                    android.Manifest.permission.ACCESS_COARSE_LOCATION
+            }, 11);
+        }
+
+
+        mLastLocation = LocationServices.FusedLocationApi
+                .getLastLocation(googleApiClient);
+
+        if (mLastLocation != null) {
+            double latitude = mLastLocation.getLatitude();
+            double longitude = mLastLocation.getLongitude();
+
+            Singleton.getInstance(mContext).longitude = longitude;
+            Singleton.getInstance(mContext).latitude = latitude;
+
+            AppLog.Log("Location: ", latitude + ", " + longitude);
+
+        } else {
+
+            LocationServices.FusedLocationApi.getLastLocation(googleApiClient);
+            LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder()
+                    .addLocationRequest(mLocationRequest);
+
+            // **************************
+            builder.setAlwaysShow(true); // this is the key ingredient
+            // **************************
+            PendingResult<LocationSettingsResult> result = LocationServices.SettingsApi
+                    .checkLocationSettings(googleApiClient, builder.build());
+            result.setResultCallback(new ResultCallback<LocationSettingsResult>() {
+                @Override
+                public void onResult(LocationSettingsResult result) {
+                    final Status status = result.getStatus();
+                    final LocationSettingsStates state = result
+                            .getLocationSettingsStates();
+                    switch (status.getStatusCode()) {
+                        case LocationSettingsStatusCodes.SUCCESS:
+                            // All location settings are satisfied. The client can
+                            // initialize location
+                            // requests here.
+                            displayLocation();
+                            AppLog.Log("LocationSettingsStatusCodes", "Success");
+                            break;
+                        case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
+                            // Location settings are not satisfied. But could be
+                            // fixed by showing the user
+                            // a dialog.
+                            try {
+                                // Show the dialog by calling
+                                // startResolutionForResult(),
+                                // and check the result in onActivityResult().
+                                AppLog.Log("LocationSettingsStatusCodes", "RESOLUTION_REQUIRED");
+                                status.startResolutionForResult(SelectSite.this, LOCATION_RESOLVER_CODE);
+                            } catch (IntentSender.SendIntentException e) {
+                                // Ignore the error.
+                            }
+                            break;
+                        case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
+                            // Location settings are not satisfied. However, we have
+                            // no way to fix the
+                            // settings so we won't show the dialog.
+                            AppLog.Log("LocationSettingsStatusCodes", "SETTINGS_CHANGE_UNAVAILABLE");
+                            break;
+                    }
+                }
+            });
+
+            AppLog.Log("Location: ", "(Couldn't get the location. Make sure location is enabled on the device)");
+        }
+    }
+
+    /**
+     * Method to toggle periodic location updates
+     * */
+    private void togglePeriodicLocationUpdates() {
+        if (!mRequestingLocationUpdates) {
+
+            mRequestingLocationUpdates = true;
+
+            // Starting the location updates
+            startLocationUpdates();
+
+            AppLog.Log("togglePeriodicLocationUpdates: ", "Periodic location updates started!");
+
+        } else {
+            mRequestingLocationUpdates = false;
+
+            // Stopping the location updates
+            stopLocationUpdates();
+
+            AppLog.Log("togglePeriodicLocationUpdates", "Periodic location updates stopped!");
+        }
+    }
+
+    /**
+     * Starting the location updates
+     * */
+    protected void startLocationUpdates() {
+
+        if (ActivityCompat.checkSelfPermission(mContext,
+                android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ) {
+            ActivityCompat.requestPermissions((Activity) mContext, new String[]{
+                    android.Manifest.permission.ACCESS_FINE_LOCATION
+            }, 10);
+        }
+
+        if (ActivityCompat.checkSelfPermission(mContext,
+                android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED ) {
+            ActivityCompat.requestPermissions((Activity) mContext, new String[]{
+                    android.Manifest.permission.ACCESS_COARSE_LOCATION
+            }, 11);
+        }
+
+        LocationServices.FusedLocationApi.requestLocationUpdates(
+                googleApiClient, mLocationRequest, this);
+
+    }
+
+    /**
+     * Stopping location updates
+     */
+    protected void stopLocationUpdates() {
+        LocationServices.FusedLocationApi.removeLocationUpdates(
+                googleApiClient, this);
+    }
+
+    /**
+     * Creating location request object
+     * */
+    protected void createLocationRequest() {
+        mLocationRequest = new LocationRequest();
+        mLocationRequest.setInterval(UPDATE_INTERVAL);
+        mLocationRequest.setFastestInterval(FATEST_INTERVAL);
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        mLocationRequest.setSmallestDisplacement(DISPLACEMENT);
+    }
+
+
     Runnable mHandlerTask = new Runnable() {
         @Override
         public void run() {
@@ -170,8 +375,7 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
             }
 
             if (Singleton.getInstance(mContext).latitude == 0 || Singleton.getInstance(mContext).longitude == 0) {
-                //Singleton.getInstance(mContext).ShowToastMessage("Please enable location from device ", mContext);
-                showSettingsAlert();
+                Singleton.getInstance(mContext).ShowToastMessage("Please enable location from device ", mContext);
                 return;
             }
 
@@ -257,7 +461,7 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
 
     }
 
-    @Override
+/*    @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         switch (requestCode) {
             case PERMISSION_ACCESS_COARSE_LOCATION:
@@ -269,7 +473,7 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
 
                 break;
         }
-    }
+    }*/
 
     @Override
     protected void onStart() {
@@ -279,38 +483,11 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
         }
     }
 
-    public void showSettingsAlert() {
-        AlertDialog.Builder alertDialog = new AlertDialog.Builder(mContext);
-
-        //Setting Dialog Title
-        alertDialog.setTitle(R.string.GPSAlertDialogTitle);
-
-        //Setting Dialog Message
-        alertDialog.setMessage(R.string.GPSAlertDialogMessage);
-
-        //On Pressing Setting button
-        alertDialog.setPositiveButton(R.string.settings, new DialogInterface.OnClickListener() {
-
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-                startActivity(intent);
-            }
-        });
-
-        //On pressing cancel button
-        alertDialog.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
-
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.cancel();
-                if (mContext != null) {
-
-                }
-            }
-        });
-
-        alertDialog.show();
+    @Override
+    protected void onStop() {
+        super.onStop();
+        AppLog.Log("Called", "onStop");
+        //googleApiClient.disconnect();
     }
 
     private void loadWebsites() {
@@ -355,8 +532,7 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
         }
 
         if (Singleton.getInstance(mContext).latitude == 0 || Singleton.getInstance(mContext).longitude == 0) {
-            //Singleton.getInstance(mContext).ShowToastMessage("Please enable location from device ", mContext);
-            showSettingsAlert();
+            Singleton.getInstance(mContext).ShowToastMessage("Please enable location from device ", mContext);
             return;
         }
         String compUrl = ApiUrl.START_SERVICE + "/" + getToken + "/" + Constants.START_SWITCH + "/" +
@@ -386,8 +562,7 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
         }*/
 
         if (Singleton.getInstance(mContext).latitude == 0 || Singleton.getInstance(mContext).longitude == 0) {
-            //Singleton.getInstance(mContext).ShowToastMessage("Please enable location from device ", mContext);
-            showSettingsAlert();
+            Singleton.getInstance(mContext).ShowToastMessage("Please enable location from device ", mContext);
             return;
         }
         String compUrl = ApiUrl.STOP_SERVICE + "/" + getToken + "/" +
@@ -591,36 +766,50 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
 
     @Override
     public void onConnected(@Nullable Bundle bundle) {
-        AppLog.Log(SelectSite.class.getSimpleName(), "Connected to Google Play Services!");
+        AppLog.Log(Splash.class.getSimpleName(), "Connected to Google Play Services!");
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
-                == PackageManager.PERMISSION_GRANTED) {
-            Location lastLocation = LocationServices.FusedLocationApi.getLastLocation(googleApiClient);
+        displayLocation();
 
-            if (lastLocation != null) {
-
-                Singleton.getInstance(mContext).latitude = lastLocation.getLatitude();
-                Singleton.getInstance(mContext).longitude = lastLocation.getLongitude();
-                AppLog.Log("onConnected_LATLNG: ", Singleton.getInstance(mContext).latitude + " ," + Singleton.getInstance(mContext).longitude);
-                //GetNearByEventService(lat, lon);
-               // startLocationUpdates();
-            } else {
-                showSettingsAlert();
-            }
-
+        if (mRequestingLocationUpdates) {
+            startLocationUpdates();
         }
 
     }
 
+    // Call Back method  to get the Message form other Activity
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data)
+    {
+        super.onActivityResult(requestCode, resultCode, data);
+        // check if the request code is same as what is passed  here it is 2
+        AppLog.Log("Called: ", "onActivityResult");
+
+        final LocationSettingsStates states = LocationSettingsStates.fromIntent(data);
+        AppLog.Log("resultCode", resultCode+" ,"+ requestCode);
+        switch (requestCode) {
+            case LOCATION_RESOLVER_CODE:
+                switch (resultCode) {
+                    case Activity.RESULT_OK:
+                        // All required changes were successfully made
+                        displayLocation();
+                        break;
+                    case Activity.RESULT_CANCELED:
+                        // The user was asked to change settings, but chose not to
+                        Singleton.getInstance(mContext).ShowToastMessage("Did you forgot to open GPS ",mContext);
+                        break;
+                    default:
+                        break;
+                }
+                break;
+        }
+    }
+
+
     @Override
     protected void onResume() {
         super.onResume();
-
-        if (Singleton.getInstance(mContext).latitude == 0 && Singleton.getInstance(mContext).longitude == 0) {
-            showSettingsAlert();
-        } else {
-            AppLog.Log("onResume_LATLNG: ", Singleton.getInstance(mContext).latitude + " ," + Singleton.getInstance(mContext).longitude);
-        }
+        AppLog.Log("Called: ", "onResume");
+        checkPlayServices();
 
     }
 
@@ -663,24 +852,22 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
     }
 
 
-    /*protected void startLocationUpdates() {
-        // Create the location request
-        mLocationRequest = LocationRequest.create()
-                .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
-                .setInterval(UPDATE_INTERVAL)
-                .setFastestInterval(FASTEST_INTERVAL);
-        // Request location updates
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return;
-        }
-        LocationServices.FusedLocationApi.requestLocationUpdates(googleApiClient,
-                mLocationRequest, (LocationListener) this);
-    }*/
+    private void scheduleCheckGPS () {
+        int delay = 0;   // delay for 30 sec.
+        int period = 1000;  // repeat every 60 sec.
+        doThis = new TimerTask() {
+            public void run() {
+
+            }
+        };
+
+        myTimer.scheduleAtFixedRate(doThis, delay, period);
+    }
+
+    @Override
+    public void onLocationChanged(Location location) {
+        mLastLocation = location;
+        // Displaying the new location on UI
+        displayLocation();
+    }
 }

@@ -33,4 +33,12 @@
 
             </RelativeLayout>
 
+        <ProgressBar
+            android:layout_alignParentBottom="true"
+            android:layout_centerInParent="true"
+            android:layout_marginBottom="10dp"
+            android:id="@+id/loader"
+            android:layout_width="35dp"
+            android:layout_height="35dp" />
+
     </RelativeLayout>
