@@ -141,6 +141,12 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
             start_btn.setEnabled(false);
             start_btn.getBackground().setAlpha(100);
 
+            select_site_btn.setEnabled(false);
+            select_site_btn.getBackground().setAlpha(100);
+
+            comment_edt.setEnabled(false);
+            comment_edt.getBackground().setAlpha(100);
+
             stop_btn.setEnabled(true);
             stop_btn.getBackground().setAlpha(200);
 
@@ -148,6 +154,12 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
             stopRepeatingTask();
             start_btn.setEnabled(true);
             start_btn.getBackground().setAlpha(200);
+
+            select_site_btn.setEnabled(true);
+            select_site_btn.getBackground().setAlpha(200);
+
+            comment_edt.setEnabled(true);
+            comment_edt.getBackground().setAlpha(200);
 
             stop_btn.setEnabled(false);
             stop_btn.getBackground().setAlpha(100);
@@ -157,8 +169,9 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
     }
 
 
+    @SuppressWarnings("deprecation")
     private boolean checkPlayServices() {
-        int resultCode = GooglePlayServicesUtil
+        @SuppressWarnings("deprecation") int resultCode = GooglePlayServicesUtil
                 .isGooglePlayServicesAvailable(this);
         if (resultCode != ConnectionResult.SUCCESS) {
             if (GooglePlayServicesUtil.isUserRecoverableError(resultCode)) {
@@ -588,6 +601,12 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
                         start_btn.setEnabled(false);
                         start_btn.getBackground().setAlpha(100);
 
+                        select_site_btn.setEnabled(false);
+                        select_site_btn.getBackground().setAlpha(100);
+
+                        comment_edt.setEnabled(false);
+                        comment_edt.getBackground().setAlpha(100);
+
                         stop_btn.setEnabled(true);
                         stop_btn.getBackground().setAlpha(200);
                     }
@@ -623,6 +642,12 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
 
                         start_btn.setEnabled(true);
                         start_btn.getBackground().setAlpha(200);
+
+                        select_site_btn.setEnabled(true);
+                        select_site_btn.getBackground().setAlpha(200);
+
+                        comment_edt.setEnabled(true);
+                        comment_edt.getBackground().setAlpha(200);
 
                         stop_btn.setEnabled(false);
                         stop_btn.getBackground().setAlpha(100);
@@ -722,6 +747,7 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
         AppLog.Log(Splash.class.getSimpleName(), "Connected to Google Play Services!");
 
         displayLocation();
+        togglePeriodicLocationUpdates();
 
         if (mRequestingLocationUpdates) {
             startLocationUpdates();
@@ -850,6 +876,10 @@ public class SelectSite extends AppCompatActivity implements WebServiceInterface
         mLastLocation = location;
         // Displaying the new location on UI
         displayLocation();
+        Singleton.getInstance(mContext).longitude = location.getLongitude();
+        Singleton.getInstance(mContext).latitude = location.getLatitude();
+
+        AppLog.Log("Updated_location: ", Singleton.getInstance(mContext).longitude +","+ Singleton.getInstance(mContext).latitude);
     }
 
    /* private void exitApp() {

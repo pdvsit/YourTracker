@@ -5,7 +5,9 @@ package com.app.utility;
  */
 public class ApiUrl {
 
-    private static final String BASE_URL = "http://yourtracker.amazesoftsolutions.in";
+    //private static final String BASE_URL = "http://yourtracker.amazesoftsolutions.in";
+    private static final String BASE_URL = "http://yourtracker.your-apps.biz"; //live
+    //private static final String BASE_URL = "http://dev.yourtracker.your-apps.biz"; // dev
     private static final String SERVICE_URL = BASE_URL + "/Services/YourTracker.svc";
 
     public static final String LOGIN = SERVICE_URL + "/LoginR"; //{UserName}/{Password}/{DeviceToken}/{DeviceId}

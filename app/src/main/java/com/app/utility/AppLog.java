@@ -12,14 +12,14 @@ public class AppLog {
     }
 
 // --Commented out by Inspection START (7/27/2016 3:26 PM):
-//    public static void handleException(String tag, Exception e) {
-//        if (isDebug) {
-//            if (e != null) {
-//                android.util.Log.d(tag, e.getMessage() + "");
-//                e.printStackTrace();
-//            }
-//        }
-//    }
+    public static void handleException(String tag, Exception e) {
+       if (isDebug) {
+           if (e != null) {
+               android.util.Log.d(tag, e.getMessage() + "");
+               e.printStackTrace();
+           }
+       }
+   }
 // --Commented out by Inspection STOP (7/27/2016 3:26 PM)
 
 }

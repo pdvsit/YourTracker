@@ -8,6 +8,7 @@ import android.util.Log;
 import android.widget.TextView;
 
 import com.app.tracker.R;
+import com.app.utility.AppLog;
 
 public class MyFontTextView extends TextView {
 
@@ -46,7 +47,7 @@ public class MyFontTextView extends TextView {
 
 		} catch (Exception e) {
 			e.printStackTrace();
-			Log.e(TAG, "Could not get typeface: " + e.getMessage());
+			AppLog.handleException(TAG, e);
 			return false;
 		}
 
